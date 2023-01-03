@@ -11,11 +11,11 @@ object CommStarter {
   def apply(): Behavior[NotUsed] =
     Behaviors.setup { context =>
       val printerRef     = context.spawn(Printer(), "printer")
-      val incrementerRef = context.spawn(Incrementer(), "incrementer")
+      val incrementerRef = context.spawn(Incrementer(0, printerRef), "incrementer")
 
       // Η διαδικασία ξεκινάει με την αποστολή ενός μηνύματος PrintNextNumber
       // στον Printer actor
-      printerRef ! Printer.PrintNextNumber(num = 0, replyTo = incrementerRef)
+      incrementerRef ! Incrementer.Begin
       Behaviors.empty
     }
 }

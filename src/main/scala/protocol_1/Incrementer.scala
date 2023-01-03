@@ -1,28 +1,46 @@
 package protocol_1
 
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
+import concurrent.duration.DurationInt
 
 // Πρωτόκολλο επικοινωνίας του Incrementer
 object Incrementer {
 
   // Είδος μηνυμάτων που αναγνωρίζει
-  sealed trait IncrementMsg
+  sealed trait IncMsg
 
-  // Μήνυμα με πληροφορίες τον αριμός προς αύξηση και το actorRef ενός Printer,
-  // ώστε να γνωρίζει ο Incrementer σε ποιον να στείλει τον επόμενο αριθμό
-  final case class PlusOne(num: Int, replyTo: ActorRef[Printer.PrintMsg]) extends IncrementMsg
+  // Μήνυμα που όταν ληθφεί θα αυξηθεί
+  // η τρεχουσα τιμή που διατηρειται στον actor κατά 1
+  case object PlusOne extends IncMsg
+  case object Begin extends IncMsg
 
-  def apply(): Behavior[IncrementMsg] =
-    Behaviors receive { (context, message) =>
-      message match
-        // Σε περιπτωση μηνύματος PlusOne
-        case PlusOne(num, replyTo) =>
-          // Αύξησε τον αριθμό που έλαβες κατα 1
-          val nextNum = num + 1
-          // Στείλε ένα μήνυμα στον Printer(replyTo) με τον καινούργιο αριθμό
-          replyTo ! Printer.PrintNextNumber(nextNum, context.self)
-          // Συνέχισε να λειτουργείς με τον ίδιο τρόπο
-          Behaviors.same
+  // Συνάρτηση που αρχικοποιεί τη συμπεριφορά του actor
+  // Ως παράμετροί δίνονται η αρχική τιμή που διατηρεί(init)
+  // και η αναφορά στον actor που θα την εκτυπώνει(sendTo).
+  def apply(init: Int, sendTo: ActorRef[Printer.PrintMsg]): Behavior[IncMsg] =
+    Behaviors.setup{ ctx =>
+      new Incrementer(ctx, sendTo).plus(init)
+    }
+}
+
+class Incrementer(ctx: ActorContext[Incrementer.IncMsg], sendTo: ActorRef[Printer.PrintMsg]) {
+  import Incrementer._
+
+  // Ορίζει μια συμπεριφορά που διατηρεί κάθε στιγμή μια ακέραια τιμή curr.
+  // Η τιμή μπορεί να αλλάξει με τα μηνύματα που επεξεργάζονται.
+  private def plus(curr: Int): Behavior[IncMsg] =
+    Behaviors.receiveMessage {
+      // Σε περιπτωση μηνύματος PlusOne
+      case PlusOne =>
+        // Αύξησε τον τρέχον αριθμό κατα 1
+        val nextNum = curr + 1
+        // Στείλε ένα μήνυμα στον Printer(sendTo) με τον καινούργιο αριθμό για εκτύπωση
+        sendTo ! Printer.PrintNextNumber(nextNum, ctx.self)
+        // Επιστρέφεται μια συμπεριφορά με την
+        plus(nextNum)
+      case Begin =>
+        sendTo ! Printer.PrintNextNumber(curr, ctx.self)
+        Behaviors.same
     }
 }

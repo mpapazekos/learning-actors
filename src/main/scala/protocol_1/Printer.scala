@@ -2,7 +2,6 @@ package protocol_1
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
-import protocol_1.Incrementer.IncrementMsg
 
 //Πρωτόκολλο επικοινωνίας του Printer
 object Printer {
@@ -11,7 +10,7 @@ object Printer {
   sealed trait PrintMsg
 
   // Μήνυμα με τον αριθμό προς εκτύπωση
-  final case class PrintNextNumber(num: Int, replyTo: ActorRef[IncrementMsg]) extends PrintMsg
+  final case class PrintNextNumber(num: Int, replyTo: ActorRef[Incrementer.IncMsg]) extends PrintMsg
 
   // Η λειτουργία του είναι σχετικά απλή:
   // ακούει μόνο σε μηνύματα τύπου PrintNextNumber,
@@ -24,9 +23,9 @@ object Printer {
         // Σε περίπτωση που ληθφεί μήνυμα PrintNextNumber
         case PrintNextNumber(num, replyTo) =>
           // Εκτύπωση αριθμου που λήφθηκε
-          context.log.info(">> PRINTING # {}", num)
+          context.log.info(">> {} PRINTING # {}", context.self.path.toString, num)
           // Αποστολή μηνύματος PlusOne για αυξηση του τρέχοντος αριθμού
-          replyTo ! Incrementer.PlusOne(num, context.self)
+          replyTo ! Incrementer.PlusOne
           // Συνέχισε να λειτουργείς με τον ίδιο τρόπο
           Behaviors.same
     }
