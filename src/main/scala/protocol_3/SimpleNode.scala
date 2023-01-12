@@ -35,41 +35,39 @@ object SimpleNode {
             case 0 =>
               // ταυτότητα == ληφθείσα ταυτότητα
               context.log.info("|--> DRAW { {} == {} }", id, prevNodeId)
-              neighbor ! Elected(context.self)
+              neighbor ! Elected(context.self, id)
 
               // Ως καινούργια συμπεριφορά, ο συγκεκριμένος actor
               // είναι πλέον NonCandidate και αναβαθμίζει την τιμή
               // του leader με το actorRef στον εαυτό του
               node(id, NonCandidate, neighbor, Some(context.self))
-            case res if res < 0 =>
+            case res if res > 0 =>
               // ταυτότητα < ληφθείσα ταυτότητα
-              context.log.info("|--> WIN { {} < {} }", id, prevNodeId)
-              neighbor ! ElectionMessage(id)
+              context.log.info("|--> LOSE { {} < {} }", id, prevNodeId)
+              neighbor ! ElectionMessage(prevNodeId)
 
               // Το μόνο που αλλάζει στη καινούργια συμπεριφορά του actor
               // είναι η κατάστασή του σε Candidate
               node(id, Candidate, neighbor, leader)
-            case res if res > 0 =>
+            case res if res < 0 =>
               // ταυτότητα > ληφθείσα ταυτότητα
-              context.log.info("|--> LOSE { {} > {} }", id, prevNodeId)
-              neighbor ! ElectionMessage(prevNodeId)
 
               // Εαν συμμετέχει στις εκλογές
               if state == Candidate then
-                // Αλλάζει την κατάσταση του σε NonCandidate
-                // αφού έχασε στη σύγκριση
-                node(id, NonCandidate, neighbor, leader)
-              else
-                // Διαφορέτικά διατηρεί την τρέχουσα συμπεριφορά του
                 Behaviors.same
+              else
+                context.log.info("|--> WIN { {} > {} }", id, prevNodeId)
+                neighbor ! ElectionMessage(id)
+                node(id, Candidate, neighbor, leader)
+
         // Μήνυμα που περιέχει το actorRef του νέου κόμβου αρχηγού
-        case Elected(newLeader) =>
+        case Elected(newLeader, leaderId) =>
           context.log.info("{} received Elected message with new leader: {}", context.self.path.name, newLeader.path.name)
 
           // Εαν το μήνυμα με τον καινούργιο αρχηγό δεν αναφέρεται στον εαυτό του
           if newLeader.ne(context.self) then
             // Το προωθεί στον επόμενο κόμβο
-            neighbor ! Elected(newLeader)
+            neighbor ! Elected(newLeader, leaderId)
             // Ενημερώνει την κατάστασή του σε NonCandidate
             // και την τιμή του τρέχοντος αρχηγού σε αυτή που λήφθηκε
             node(id, NonCandidate, neighbor, Some(newLeader))
@@ -77,18 +75,11 @@ object SimpleNode {
             // Διαφορετικά η διαδικασία της εκλογής ολοκληρώθηκε
             context.log.info("LEADER FINALIZED: {}", context.self.path.name)
             Behaviors.same
-        // Μήνυμα που ξεκινά τη διαδικασίας ελέγχου ύπαρξης ενός αρχηγού
+        // Μήνυμα που ξεκινά τη διαδικασία ελέγχου ύπαρξης ενός αρχηγού
         case CheckLeader =>
-          context.log.info("{} checking if a leader exists", context.self.path.name)
-          leader match
-            case None =>
-              // Δεν βρέθηκε τιμή αρχηγού οπότε στέλνει μήνυμα στον
-              // γειτονικό κόμβο για να ξεκινήσει την εκλογή
-              // και αναβαθμίζει την κατάστασή του σε Candidate
-              context.log.info("LEADER DOES NOT EXIST. STARTING ELECTION")
-              neighbor ! ElectionMessage(id)
-              node(id, Candidate, neighbor, leader)
-            case _ =>
-              Behaviors.empty
+          context.log.info("{} STARTING ELECTION", context.self.path.name)
+          neighbor ! ElectionMessage(id)
+          node(id, Candidate, neighbor, leader)
+
     }
 }

@@ -26,6 +26,6 @@ object ChangAndRoberts {
   sealed trait RingMsg
   case object CheckLeader extends RingMsg
   final case class ElectionMessage(id: Long) extends RingMsg
-  final case class Elected(leader: ActorRef[RingMsg]) extends RingMsg
+  final case class Elected(leader: ActorRef[RingMsg], leaderId: Long) extends RingMsg
   
 }

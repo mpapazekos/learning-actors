@@ -1,1 +1,40 @@
 1666296542824:;set _root_.scala.collection.Seq(historyPath := None,shellPrompt := { _ => "" },SettingKey[_root_.scala.Option[_root_.sbt.File]]("sbtStructureOutputFile") in _root_.sbt.Global := _root_.scala.Some(_root_.sbt.file("/tmp/sbt-structure.xml")),SettingKey[_root_.java.lang.String]("sbtStructureOptions") in _root_.sbt.Global := "download, resolveClassifiers");apply -cp "/home/zeko/.local/share/JetBrains/IdeaIC2022.2/Scala/repo/org/jetbrains/scala/sbt-structure-extractor_2.12_1.0/2021.3.0/sbt-structure-extractor-2021.3.0.jar" org.jetbrains.sbt.CreateTasks;preferScala2;*/*:dumpStructure
+1669994126563:;set _root_.scala.collection.Seq(historyPath := None,shellPrompt := { _ => "" },SettingKey[_root_.scala.Option[_root_.sbt.File]]("sbtStructureOutputFile") in _root_.sbt.Global := _root_.scala.Some(_root_.sbt.file("/tmp/sbt-structure.xml")),SettingKey[_root_.java.lang.String]("sbtStructureOptions") in _root_.sbt.Global := "download, resolveClassifiers");apply -cp "/home/zeko/.local/share/JetBrains/IdeaIC2022.3/Scala/repo/org/jetbrains/scala/sbt-structure-extractor_2.12_1.0/2022.3.1/sbt-structure-extractor-2022.3.1.jar" org.jetbrains.sbt.CreateTasks;preferScala2;*/*:dumpStructure
+1670676083063:runMain protocol_5.cluster.EchoProtocol
+1670676309502:runMain protocol_5.cluster.EchoProtocol 2551
+1670682192316:runMain simple.App 25251
+1670682230549:runMain simple.App 25252
+1670682531730:runMain protocol_5.cluster.EchoProtocol 25251
+1670684243555:runMain simple.App 25250
+1670684300890:runMain simple.App 25251
+1670684368696:runMain protocol_5.cluster.EchoProtocol 25251
+1670685046660:runMain protocol_5.cluster.EchoProtocol 25252
+1670685121761:runMain protocol_5.cluster.EchoProtocol
+1670779202645:runMain protocol_5.cluster.EchoProtocol 25251
+1670779778196:;set _root_.scala.collection.Seq(historyPath := None,shellPrompt := { _ => "" },SettingKey[_root_.scala.Option[_root_.sbt.File]]("sbtStructureOutputFile") in _root_.sbt.Global := _root_.scala.Some(_root_.sbt.file("/tmp/sbt-structure.xml")),SettingKey[_root_.java.lang.String]("sbtStructureOptions") in _root_.sbt.Global := "download, resolveClassifiers");apply -cp "/home/zeko/.local/share/JetBrains/IdeaIC2022.3/Scala/repo/org/jetbrains/scala/sbt-structure-extractor_2.12_1.0/2022.3.1/sbt-structure-extractor-2022.3.1.jar" org.jetbrains.sbt.CreateTasks;preferScala2;*/*:dumpStructure
+1670779799513:reload
+1670779817190:runMain protocol_5.cluster.EchoProtocol 25251
+1670779859333:runMain protocol_5.cluster.EchoProtocol
+1670780194301:runMain protocol_5.cluster.EchoProtocol 25251 init
+1670926167594:runMain protocol_5.cluster.EchoProtocol 25251 simple
+1670926198998:runMain protocol_5.cluster.EchoProtocol 25253 simple
+1670926278762:runMain protocol_5.cluster.EchoProtocol 0 simple
+1670926334561:runMain protocol_5.cluster.EchoProtocol 0 init
+1670926656018:runMain protocol_5.cluster.EchoProtocol 25251 simple
+1670926682213:runMain protocol_5.cluster.EchoProtocol 25253 simple
+1670926712421:runMain protocol_5.cluster.EchoProtocol 0 simple
+1670926739916:runMain protocol_5.cluster.EchoProtocol 0 init
+1670927177780:runMain protocol_5.cluster.EchoProtocol 25251 simple
+1670927193521:runMain protocol_5.cluster.EchoProtocol 25253 simple
+1670927203468:runMain protocol_5.cluster.EchoProtocol 0 simple
+1670927485721:runMain protocol_5.cluster.EchoProtocol 0 init
+1670927553617:runMain protocol_5.cluster.EchoProtocol 0 simple
+1671022743498:;set _root_.scala.collection.Seq(historyPath := None,shellPrompt := { _ => "" },SettingKey[_root_.scala.Option[_root_.sbt.File]]("sbtStructureOutputFile") in _root_.sbt.Global := _root_.scala.Some(_root_.sbt.file("/tmp/sbt-structure.xml")),SettingKey[_root_.java.lang.String]("sbtStructureOptions") in _root_.sbt.Global := "download, resolveClassifiers");apply -cp "/home/zeko/.local/share/JetBrains/IdeaIC2022.3/Scala/repo/org/jetbrains/scala/sbt-structure-extractor_2.12_1.0/2022.3.1/sbt-structure-extractor-2022.3.1.jar" org.jetbrains.sbt.CreateTasks;preferScala2;*/*:dumpStructure
+1672590933974:protocol_5.cluster.EchoProtocol 25251 echo
+1672590960442:runMain protocol_5.cluster.EchoProtocol 25251 echo
+1673446264996:runMain protocol_5.cluster.RingProtocolCluster 25251 init
+1673446356948:runMain protocol_5.cluster.RingProtocolCluster 0 else
+1673446849964:runMain protocol_5.cluster.RingProtocolCluster 25251 init
+1673446870123:runMain protocol_5.cluster.RingProtocolCluster 0 else
+1673447147448:runMain protocol_5.cluster.RingProtocolCluster 25251 init
+1673447166746:runMain protocol_5.cluster.RingProtocolCluster 0 else

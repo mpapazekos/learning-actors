@@ -1,8 +1,11 @@
 package protocol_4
 
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 
-object ItaiRodehMain {
 
+object ItaiRodeh {
+  
   //Fokkink, Wan & Pang, Jun. (2004). Simplifying Itai-Rodeh Leader Election for Anonymous Rings.
   // Electronic Notes in Theoretical Computer Science. 128. 53-68. 10.1016/j.entcs.2005.04.004.
 
@@ -34,12 +37,20 @@ object ItaiRodehMain {
   //election rounds can be recognized and ignored.
 
   def main(args: Array[String]): Unit =
-    
-    val system = ActorSystem(ItaiRodehMain(10),"ItaiRodeh")
+    ActorSystem(ItaiRodeh(3), "ItaiRodeh")
+  
+  //===============================================================================
+  
+  sealed trait Msg
+  final case class CollectNodes(nodes: Vector[ActorRef[IRNode.IRMsg]]) extends Msg
 
-
-
- 
-
-
+  def apply(totalNodes: Int): Behavior[Msg] =
+    Behaviors.setup { ctx =>
+      ctx.spawnAnonymous(StartNode(totalNodes, ctx.self))
+      Behaviors.receiveMessage {
+        case CollectNodes(nodes) =>
+          nodes.foreach(node => node ! IRNode.StartNewElection )
+          Behaviors.empty
+      }
+    }
 }
