@@ -1,13 +1,14 @@
-package cluster
+package cluster.ChangRoberts
 
 import akka.actor.typed.receptionist.Receptionist
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
+import cluster.CborSerializable
+
 
 object Coordinator {
 
-  import RingNode._
-
+  import CRNode._
   // Κατασκεύη δακτυλίου μεσα στον cluster
   // ο κάθε μη-αρχικοποιητής κόμβος δηλώνει την υπηρεσία του στον receptionist
   // ενας συντονιστής κόμβος κανει εγγραφή για να γνωρίζει τις διαθεσιμες υπηρεσίες
@@ -27,7 +28,7 @@ object Coordinator {
 
   // Μήνυμα που εκφράζει την απάντηση του receptionist
   // περιέχει ένα σύνολο απο αναφορές
-  private case class ReceptionistAnswer(listing: Set[ActorRef[RingMsg]]) extends CrdMsg
+  private case class ReceptionistAnswer(listing: Set[ActorRef[CRMsg]]) extends CrdMsg
 
   def apply(minNodes: Int): Behavior[CrdMsg] =
     Behaviors.setup { context =>
@@ -38,11 +39,11 @@ object Coordinator {
       // το δικό του πρωτόκολλο αποδεκτού τύπου μηνυμάτων
       val subscriber =
         context.messageAdapter[Receptionist.Listing] {
-          case RingProtServiceKey.Listing(services) => ReceptionistAnswer(services)
+          case CRProtServiceKey.Listing(services) => ReceptionistAnswer(services)
         }
 
-      // Εγγραφή στην υπηρεσία RingProtService
-      context.system.receptionist ! Receptionist.Subscribe(RingProtServiceKey, subscriber)
+      // Εγγραφή στην υπηρεσία ProtService
+      context.system.receptionist ! Receptionist.Subscribe(CRProtServiceKey, subscriber)
 
       coordinator(minNodes, List.empty)
     }
@@ -50,22 +51,22 @@ object Coordinator {
   // Διατηρεί τον ελάχιστο αριθμό κόμβων για να ξεκινήσει η διαδικασία
   // και μια λίστα με αναφορές η οποία ανανεώνεται κάθε φορά
   // που λαμβάνεται απάντηση απο τον receptionist
-  private def coordinator(minNodes: Int, known: List[ActorRef[RingMsg]]): Behavior[CrdMsg] =
+  private def coordinator(minNodes: Int, known: List[ActorRef[CRMsg]]): Behavior[CrdMsg] =
     Behaviors.receive { (context, msg) =>
       msg match {
         case ReceptionistAnswer(actorRefs) =>
           val updatedRefsList = actorRefs.toList
           context.log.info(updatedRefsList.mkString("-"))
-          if actorRefs.size < minNodes then           // Εαν οι κόμβοι δεν ειναι αρκετοι
-            coordinator(minNodes, updatedRefsList)    // ενημέρωσε τη λίστα και συνέχισε να περιμένεις
-          else                                        // Διαφορετικά
-            createRingConnection(updatedRefsList)     // δημιούργησε τον σύνδεσμο δακτυλίου
-            updatedRefsList.head ! Init("TOP_SECRET") // πες στον πρώτο στη λίστα να ξεκινήσει
+          if actorRefs.size < minNodes then // Εαν οι κόμβοι δεν ειναι αρκετοι
+            coordinator(minNodes, updatedRefsList) // ενημέρωσε τη λίστα και συνέχισε να περιμένεις
+          else // Διαφορετικά
+            createRingConnection(updatedRefsList) // δημιούργησε τον σύνδεσμο δακτυλίου
+            updatedRefsList.head ! Begin // πες στον πρώτο στη λίστα να ξεκινήσει
             Behaviors.ignore
       }
     }
-
-  private def createRingConnection(actorRefs: List[ActorRef[RingMsg]]): Unit =
+      
+  private def createRingConnection(actorRefs: List[ActorRef[CRMsg]]): Unit =
     // Εαν
     //   actorRefs = [ref1, ref2, ref3, ... , refN]
     // Τότε
