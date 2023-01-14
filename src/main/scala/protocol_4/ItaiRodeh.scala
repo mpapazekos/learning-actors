@@ -37,7 +37,7 @@ object ItaiRodeh {
   //election rounds can be recognized and ignored.
 
   def main(args: Array[String]): Unit =
-    ActorSystem(ItaiRodeh(3), "ItaiRodeh")
+    ActorSystem(ItaiRodeh(5), "ItaiRodeh")
   
   //===============================================================================
   

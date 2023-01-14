@@ -1,9 +1,10 @@
-package cluster
+package cluster.RingProtocol
 
 import akka.actor.typed.ActorSystem
+import cluster.RingProtocol.{Coordinator, RingNode}
 import com.typesafe.config.ConfigFactory
 
-object RingProtocolCluster {
+object Main {
 
   def main(args: Array[String]): Unit =
     require(args.length == 2)

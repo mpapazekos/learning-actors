@@ -1,8 +1,9 @@
-package cluster
+package cluster.RingProtocol
 
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
+import cluster.CborSerializable
 
 object RingNode {
 
@@ -67,4 +68,22 @@ object RingNode {
             Behaviors.same
       }
     }
+
+  def connectAndStart(actorRefs: List[ActorRef[RingMsg]]): Unit =
+    createRingConnection(actorRefs) // δημιούργησε τον σύνδεσμο δακτυλίου
+    actorRefs.foreach(_ ! Init("token_msg"))
+  
+  private def createRingConnection(actorRefs: List[ActorRef[RingMsg]]): Unit =
+  
+    // Εαν
+    //   actorRefs = [ref1, ref2, ref3, ... , refN]
+    // Τότε
+    //   headToLast = [ref2, ref3, ... , refN, ref1]
+    val headToLast = actorRefs.tail.appended(actorRefs.head)
+  
+    // zipped = [(ref1, ref2), (re2, ref3), ... , (refN-1, refN), (refN-1, ref1)]
+    val zipped = actorRefs.zip(headToLast)
+  
+    // Δημιουργία δακτυλίου
+    zipped.foreach((ref1, ref2) => ref1 ! Connect(ref2))
 }

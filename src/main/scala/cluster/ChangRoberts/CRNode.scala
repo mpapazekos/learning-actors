@@ -20,13 +20,12 @@ object CRNode {
 
   // Μήνυμα που χρησιμοποιείται μόνο για την
   // εκκίνηση της διαδικασίας.
-  // όλις ληφθεί, αποστέλνεται μήνυμα στον επόμενο κόμβο.
+  // Μόλις ληφθεί, αποστέλνεται μήνυμα στον επόμενο κόμβο.
   case object Begin extends CRMsg
 
   // Οταν ληφθεί μήνυμα Connect
   // ο κόμβος που θα προωθεί τα μηνύματα παίρνει καινούργια τιμή
   final case class Connect(forwardTo: ActorRef[CRMsg]) extends CRMsg
-
 
   def apply(id: Int): Behavior[CRMsg] =
     Behaviors.setup { context =>
@@ -86,6 +85,22 @@ object CRNode {
       }
     }
 
+  def connectAndStart(actorRefs: List[ActorRef[CRMsg]]): Unit =
+    createRingConnection(actorRefs) // δημιούργησε τον σύνδεσμο δακτυλίου
+    actorRefs.foreach(_ ! Begin)
 
+  private def createRingConnection(actorRefs: List[ActorRef[CRMsg]]): Unit =
+
+    // Εαν
+    //   actorRefs = [ref1, ref2, ref3, ... , refN]
+    // Τότε
+    //   headToLast = [ref2, ref3, ... , refN, ref1]
+    val headToLast = actorRefs.tail.appended(actorRefs.head)
+  
+    // zipped = [(ref1, ref2), (re2, ref3), ... , (refN-1, refN), (refN-1, ref1)]
+    val zipped = actorRefs.zip(headToLast)
+  
+    // Δημιουργία δακτυλίου
+    zipped.foreach((ref1, ref2) => ref1 ! Connect(ref2))
 
 }
