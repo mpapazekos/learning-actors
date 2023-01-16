@@ -63,7 +63,7 @@ object EchoNode {
     }
 
   private def echo(reportTo: Option[ActorRef[Token]], known: Set[ActorRef[Token]]): Behavior[Msg] =
-    Behaviors.receivePartial { (ctx, msg) =>
+    Behaviors.receive { (ctx, msg) =>
       msg match
         case Token(info, replyTo) =>
           if reportTo.isEmpty then // first token received

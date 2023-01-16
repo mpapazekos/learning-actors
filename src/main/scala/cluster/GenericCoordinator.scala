@@ -25,7 +25,7 @@ object GenericCoordinator {
           case serviceKey.Listing(services) => ReceptionistAnswer(services)
         }
 
-      // Εγγραφή στην υπηρεσία ProtService
+      // Εγγραφή στην υπηρεσία 
       context.system.receptionist ! Receptionist.Subscribe(serviceKey, subscriber)
 
       coordinator(minNodes, List.empty, f)
@@ -39,6 +39,6 @@ object GenericCoordinator {
             coordinator(minNodes, updatedRefsList, f) // ενημέρωσε τη λίστα και συνέχισε να περιμένεις
           else 
             f(updatedRefsList)
-            Behaviors.ignore
+            Behaviors.same
       }
 }
