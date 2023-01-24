@@ -34,54 +34,55 @@ object CRNode {
       context.log.info("Registering myself with the receptionist")
       receptionist ! Receptionist.Register(CRProtServiceKey, context.self)
 
-      nodeBehavior(id, false, None)
+      Behaviors.receiveMessage {
+        case Connect(forwardTo) =>
+          context.log.info("ID {} CONNECTING WITH {} ", id, forwardTo)
+          nodeBehavior(id, false, forwardTo)
+        case _ =>
+          Behaviors.same
+      }
+      
     }
-
 
   // Η κατάσταση που θα διατηρεί ο συγκεκριμένος actor
   //  id - το μοναδικό αναγνωριστικό του κόμβου (δίνεται απο τον χρήστη)
   //  participant - εαν είναι συμμετέχων ή όχι
   //  forwardTo - ο κόμβος που θα προωθεί το μήνυμα
-  private def nodeBehavior(id: Int, participant: Boolean, forwardTo: Option[ActorRef[CRMsg]]): Behavior[CRMsg] =
+  private def nodeBehavior(id: Int, participant: Boolean, forwardTo: ActorRef[CRMsg]): Behavior[CRMsg] =
     Behaviors.receive{ (context, message) =>
       message match {
-        case Connect(forwardTo) =>
-          nodeBehavior(id, participant, Some(forwardTo))
         case Begin =>
-          // Εάν έχει οριστεί επόμενος κόμβος
-          if forwardTo.isDefined then
-            context.log.info("ΕΚΚΙΝΗΣΗ ΔΙΑΔΙΚΑΣΙΑΣ ΕΚΛΟΓΗΣ")
-            forwardTo.get ! ElectionMessage(id, context.self)
-            nodeBehavior(id, true, forwardTo)
-          else
-            Behaviors.same
+          context.log.info("ΕΚΚΙΝΗΣΗ ΔΙΑΔΙΚΑΣΙΑΣ ΕΚΛΟΓΗΣ")
+          forwardTo ! ElectionMessage(id, context.self)
+          nodeBehavior(id, true, forwardTo)
+    
         case ElectionMessage(senderId, sender) =>
           context.log.info("ΛΗΦΘΗΚΕ ΤΙΜΗ {} ΑΠΟ {}", senderId, sender)
-          // Εάν έχει οριστεί επόμενος κόμβος
-          if forwardTo.isDefined then
-            val nextNode = forwardTo.get
-            if senderId > id then
-              nextNode ! ElectionMessage(senderId, context.self)
-              nodeBehavior(id, true, forwardTo)
-            else if senderId < id then
-              if participant then
-                Behaviors.same
-              else
-                nextNode ! ElectionMessage(id, context.self)
-                nodeBehavior(id, true, forwardTo)
+          if senderId > id then
+            context.log.info("ΑΠΟΣΤΟΛΗ ID {} ΣΕ {}", senderId, forwardTo)
+            forwardTo ! ElectionMessage(senderId, context.self)
+            nodeBehavior(id, true, forwardTo)
+          else if senderId < id then
+            if participant then
+              Behaviors.same
             else
-              context.log.info("ΕΠΙΛΟΓΗ ΑΡΧΗΓΟΥ")
-              nextNode ! Elected(id, context.self)
-              nodeBehavior(id, false, forwardTo)
+              context.log.info("ΑΠΟΣΤΟΛΗ ID {} ΣΕ {}", id, forwardTo)
+              forwardTo ! ElectionMessage(id, context.self)
+              nodeBehavior(id, true, forwardTo)
           else
-            Behaviors.same
-        case Elected(leaderId, leader) =>
-          if forwardTo.isDefined then
-            context.log.info("ΟΡΙΣΜΟΣ ΑΡΧΗΓΟΥ {} ΜΕ ΤΙΜΗ {}", leader, leaderId)
-            forwardTo.get ! Elected(id, context.self)
+            context.log.info("ΕΠΙΛΟΓΗ ΑΡΧΗΓΟΥ")
+            forwardTo ! Elected(id, context.self)
             nodeBehavior(id, false, forwardTo)
-          else
-            Behaviors.same
+
+        case Elected(leaderId, leader) =>
+          if participant then
+            context.log.info("ΟΡΙΣΜΟΣ ΑΡΧΗΓΟΥ {} ΜΕ ΤΙΜΗ {}", leader, leaderId)
+            forwardTo ! Elected(leaderId, context.self)
+          if leaderId equals id then
+            context.log.info("ΟΛΟΙ ΕΝΗΜΕΡΩΘΗΚΑΝ")
+          nodeBehavior(id, false, forwardTo)
+
+        case _ => Behaviors.same
       }
     }
 
