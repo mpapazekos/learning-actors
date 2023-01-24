@@ -31,7 +31,7 @@ object IRNode2 {
   // Passive(μη-συμμετεχων)
   // Active (συμμετεχων)
   // Leader (αρχηγός)
-  enum IRNState:
+  enum ElectionState:
     case Passive, Active, Leader
 
   // Ο κόμβος θα πρεπει να διατηρει τις εξής πληροφορίες
@@ -44,7 +44,7 @@ object IRNode2 {
   // για διευκόλυνση στον ορισμό νεας συμπεριφοράς
   private final case class NodeState(
                                       id: Int, totalNodes: Int,
-                                      round: Int, electionState: IRNState,
+                                      round: Int, electionState: ElectionState,
                                       nextNode: Option[ActorRef[IRMsg]]
                                     )
 
@@ -58,19 +58,19 @@ object IRNode2 {
     }
 
   private def waitingForConnection(totalNodes: Int): Behavior[IRMsg] =
-    Behaviors.receivePartial{  (context, message) =>
+    Behaviors.receive{  (context, message) =>
       message match {
         case Connect(forwardTo) =>
           val id = Random.between(1, totalNodes) + 1
           context.log.info("STARTING ID {} CONNECTING WITH {} ", id, forwardTo)
-          readyToStart(NodeState(id, totalNodes, 1, IRNState.Active, Some(forwardTo)))
+          readyToStart(NodeState(id, totalNodes, 1, ElectionState.Active, Some(forwardTo)))
         case _ =>
           Behaviors.same
       }
     }
       
   private def readyToStart(state: NodeState): Behavior[IRMsg] =
-    Behaviors.receivePartial { (context, message) =>
+    Behaviors.receive { (context, message) =>
       context.log.info("STARTING_NEW_ELECTION WITH ID: {}, ROUND: {} ", state.id, state.round)
       message match {
         case StartNewElection =>
@@ -82,19 +82,19 @@ object IRNode2 {
     }
     
   private def nodeBehavior(state: NodeState): Behavior[IRMsg] =
-    Behaviors.receivePartial { (context, message) =>
+    Behaviors.receive{ (context, message) =>
       context.log.info("NODE_BEHAVIOR WITH ID: {}, ROUND: {} ", state.id, state.round)
       message match 
         case msg: RoundMsg => // Λήψη μηνύματος απο διαφορετικό κόμβο
           state.electionState match {
-            case IRNState.Passive => // Σε περίπτωση που δεν συμμετέχει
+            case ElectionState.Passive => // Σε περίπτωση που δεν συμμετέχει
               state.nextNode.get ! msg.copy(hop = msg.hop + 1)
               Behaviors.same
-            case IRNState.Active =>
+            case ElectionState.Active =>
               // Καλεί την αντίστοιχη μέθοδο για διαχείριση της περίπτωσης
               // με δεδομένα το μήνυμα, την κατάσταση και το πλαίσιο εκτέλεσης
               onActive(msg, state, context)
-            case IRNState.Leader =>
+            case ElectionState.Leader =>
               // Εαν είναι αρχηγός διατηρεί τη ίδια συμπεριφορά
               Behaviors.same
           }
@@ -105,8 +105,8 @@ object IRNode2 {
   //Κάθε ενεργός κόμβος με τη λήψη του μηνύματος  (id, round, hop, sameIdFound) κάνει τα παρακάτω:
   private def onActive(msg: RoundMsg, state: NodeState, context: ActorContext[IRMsg]): Behavior[IRMsg] =
 
-  // To μήνυμα αφορά νέο γύρο εκλογών οπότε δεν ενδιαφέρει τον τρέχοντα κόμβο.
-  // Το μήνυμα προωθείται
+    // To μήνυμα αφορά νέο γύρο εκλογών οπότε δεν ενδιαφέρει τον τρέχοντα κόμβο.
+    // Το μήνυμα προωθείται
     if msg.round > state.round then
       val newMsg = msg.copy(hop = msg.hop + 1)
       state.nextNode.get ! newMsg
@@ -127,7 +127,7 @@ object IRNode2 {
         else
           context.log.info("LEADER WITH ID = {} ROUND = {}", state.id, state.round, state.nextNode.get)
           // δεν έχει βρεθεί ίδιο id οπότε γίνεται αρχηγός
-          val newState = state.copy(electionState = IRNState.Leader)
+          val newState = state.copy(electionState = ElectionState.Leader)
           nodeBehavior(newState)
       else
         // Το μήνυμα δεν είναι δικό του
@@ -137,7 +137,7 @@ object IRNode2 {
           state.nextNode.get ! newMsg
 
           // Ο κόμβος γίνεται passive
-          val newState = state.copy(electionState = IRNState.Passive)
+          val newState = state.copy(electionState = ElectionState.Passive)
           nodeBehavior(newState)
         else if msg.id == state.id then
           // Ο κόμβος στέλνει το μήνυμα (κ, i, h+1, true) στον επόμενο

@@ -30,42 +30,46 @@ object RingNode {
   // Κατα τη δημιουργία του δέχεται ως όρισματα το εαν θα είναι αρχικοποιητης
   // και τον κόμβο που θα προωθεί τα μηνύματα. Οι τιμές αυτές αλλάζουν ανάλογα
   // τα μηνύματα που λαμβάνει
-  def apply(init: Boolean, forwardTo: Option[ActorRef[RingMsg]]): Behavior[RingMsg] =
+  def apply(): Behavior[RingMsg] =
     Behaviors.setup { context =>
 
       val receptionist = context.system.receptionist
-      context.log.info("Registering myself with the receptionist")
+      context.log.info("ΔΗΛΩΣΗ ΥΠΗΡΕΣΙΑΣ ΣΤΟΝ RECEPTIONIST")
       receptionist ! Receptionist.Register(RingProtServiceKey, context.self)
 
-      ringNodeBehavior(init, forwardTo)
+      // Περιμένει να συνδεθεί με τον γειτονικό κόμβο
+      // στο δικτυο στον οποίο θα προωθεί ένα μήνυμα
+      Behaviors.receiveMessage {
+        case Connect(forwardTo) =>
+          // Με το αποκτήσει τη πληροφορία
+          // αλλάζει στην κύρια συμπεριφορά
+          // του πρωτοκόλλου
+          ringNodeBehavior(false, forwardTo)
+        case _ =>
+          // Εαν δεν έχει ορισμένο γειτονικό κόμβο
+          // απλά συνεχίζει να περιμένει
+          Behaviors.same
+      }
     }
 
-  private def ringNodeBehavior(init: Boolean, forwardTo: Option[ActorRef[RingMsg]]): Behavior[RingMsg] =
+  private def ringNodeBehavior(init: Boolean, forwardTo: ActorRef[RingMsg]): Behavior[RingMsg] =
     Behaviors.receive { (context, message) =>
       message match {
-        case Connect(forwardTo) =>
-          RingNode(init, Some(forwardTo))
-
         case Token(txt, sender) =>
-          context.log.info("RECEIVED TOKEN FROM {}", sender)
+          context.log.info("ΛΗΨΗ ΤΟΚΕΝ ΑΠΟ {}", sender)
           if init then
-            context.log.info("PROTOCOL COMPLETE {}", txt)
-            RingNode(false, forwardTo)
+            context.log.info("ΟΛΟΚΛΗΡΩΣΗ ΠΡΩΤΟΚΟΛΛΟΥ {}", txt)
+            ringNodeBehavior(false, forwardTo)
           else
-            if forwardTo.nonEmpty then
-              val forwardToRef = forwardTo.get
-              context.log.info("FORWARDING TO {}", forwardToRef)
-              forwardToRef ! Token(txt, context.self)
+            context.log.info("ΠΡΟΩΘΗΣΗ ΣΕ {}", forwardTo)
+            forwardTo ! Token(txt, context.self)
             Behaviors.same
 
         case Init(tkn) =>
-          if forwardTo.nonEmpty then
-            val forwardToRef = forwardTo.get
-            context.log.info("SENDING FIRST TOKEN TO {}", forwardToRef)
-            forwardToRef ! Token(tkn, context.self)
-            RingNode(true, forwardTo)
-          else
-            Behaviors.same
+          context.log.info("ΑΠΟΣΤΟΛΗ ΠΡΩΤΟΥ ΤΟΚΕΝ ΣΕ {}", forwardTo)
+          forwardTo ! Token(tkn, context.self)
+          ringNodeBehavior(true, forwardTo)
+
       }
     }
 

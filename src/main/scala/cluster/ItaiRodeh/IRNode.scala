@@ -31,7 +31,7 @@ object IRNode {
   // Passive(μη-συμμετεχων)
   // Active (συμμετεχων)
   // Leader (αρχηγός)
-  enum IRNState:
+  enum ElectionState:
     case Passive, Active, Leader
 
   // Ο κόμβος θα πρεπει να διατηρει τις εξής πληροφορίες
@@ -44,7 +44,7 @@ object IRNode {
   // για διευκόλυνση στον ορισμό νεας συμπεριφοράς
   private final case class NodeState(
                                       id: Int, totalNodes: Int,
-                                      round: Int, electionState: IRNState,
+                                      round: Int, electionState: ElectionState,
                                       nextNode: Option[ActorRef[IRMsg]]
                                     )
 
@@ -55,21 +55,16 @@ object IRNode {
       context.log.info("Registering myself with the receptionist")
       receptionist ! Receptionist.Register(IRprotServiceKey, context.self)
 
-      waitingToConnect(totalNodes)
-    }
-
-  private def waitingToConnect(totalNodes: Int): Behavior[IRMsg] =
-    Behaviors.receive { (context, message) =>
-      message match {
+      Behaviors.receiveMessage {
         case Connect(forwardTo) =>
           val id = Random.between(1, totalNodes) + 1
           context.log.info("STARTING ID {} CONNECTING WITH {} ", id, forwardTo)
-          nodeBehavior(NodeState(id, totalNodes, 1, IRNState.Active, Some(forwardTo)))
+          nodeBehavior(NodeState(id, totalNodes, 1, ElectionState.Active, Some(forwardTo)))
         case _ =>
           Behaviors.same
       }
     }
-
+  
   // Συμπεριφορά του actor που εκφράζει έναν κόμβο στο πρωτόκολλο Itai & Rodeh
   // Διατηρεί ως κατάσταση ένα αντικείμενο τύπου NodeState
   private def nodeBehavior(state: NodeState): Behavior[IRMsg] =
@@ -84,15 +79,15 @@ object IRNode {
           // Λήψη μηνύματος απο διαφορετικό κόμβο
           context.log.info("ΝΕΟ ΜΗΝΥΜΑ ID: {}, ROUND: {} ", state.id, state.round)
           state.electionState match {
-            case IRNState.Passive =>
+            case ElectionState.Passive =>
               // Σε περίπτωση που δεν συμμετέχει
               state.nextNode.get ! RoundMsg(id, round, hop + 1, sameIdFound)
               Behaviors.same
-            case IRNState.Active =>
+            case ElectionState.Active =>
               // Καλεί την αντίστοιχη μέθοδο για διαχείριση της περίπτωσης
               // με δεδομένα το μήνυμα, την κατάσταση και το πλαίσιο εκτέλεσης
               onActive(msg, state, context)
-            case IRNState.Leader =>
+            case ElectionState.Leader =>
               // Εαν είναι αρχηγός διατηρεί τη ίδια συμπεριφορά
               Behaviors.same
           }
@@ -123,7 +118,7 @@ object IRNode {
           nodeBehavior(newState)
         else
           context.log.info("ΑΡΧΗΓΟΣ ΜΕ ID = {} ROUND = {}", node.id, node.round, node.nextNode.get)
-          val newState = node.copy(electionState = IRNState.Leader)
+          val newState = node.copy(electionState = ElectionState.Leader)
           nodeBehavior(newState)
       else
         if msg.id > node.id then
@@ -132,7 +127,7 @@ object IRNode {
           node.nextNode.get ! newMsg
 
           // Ο κόμβος γίνεται passive
-          val newState = node.copy(electionState = IRNState.Passive)
+          val newState = node.copy(electionState = ElectionState.Passive)
           nodeBehavior(newState)
         else if msg.id == node.id then
           val newMsg = msg.copy(hop = msg.hop + 1, sameIdFound = true)

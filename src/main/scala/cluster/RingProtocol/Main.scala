@@ -23,7 +23,7 @@ object Main {
       if role == "coord" then
         Coordinator(4)
       else
-        RingNode(false, None)
+        RingNode()
 
     ActorSystem(rootBehavior, "ClusterSystem", config)
 }

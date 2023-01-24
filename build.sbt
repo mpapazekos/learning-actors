@@ -13,7 +13,7 @@ lazy val root =
       Global / cancelable := false
     )
 
-lazy val AkkaVersion = "2.6.20"
+lazy val AkkaVersion = "2.7.0"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion,

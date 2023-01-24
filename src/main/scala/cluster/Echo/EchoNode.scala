@@ -37,7 +37,7 @@ object EchoNode {
 
       Behaviors.receiveMessagePartial {
         case Connect(neighbors) =>
-          context.log.info("CONNECTED WITH {}", neighbors.map(address).mkString("-"))
+          context.log.info("CONNECTED WITH {}", neighbors.map(address).mkString(" - "))
           node(neighbors)
       }
     }
@@ -120,6 +120,8 @@ object EchoNode {
           Behaviors.same
     }
 
+  // Δεδομένης μια αναφοράς σε actor, επιστρέφει
+  // ενα αλφαριθμητικό με τη διέυθυνση συστήματός του
   private def address[T](actorRef: ActorRef[T]): String =
     actorRef.path.address.toString
 

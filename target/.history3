@@ -166,3 +166,8 @@
 1673801254795:runMain cluster.Echo.Main 0 other
 1673893029365:runMain cluster.Echo.Main 25251 coord
 1673893069051:runMain cluster.Echo.Main 0 other
+1674151850379:;set _root_.scala.collection.Seq(historyPath := None,shellPrompt := { _ => "" },SettingKey[_root_.scala.Option[_root_.sbt.File]]("sbtStructureOutputFile") in _root_.sbt.Global := _root_.scala.Some(_root_.sbt.file("/tmp/sbt-structure.xml")),SettingKey[_root_.java.lang.String]("sbtStructureOptions") in _root_.sbt.Global := "download, resolveClassifiers");apply -cp "/home/zeko/.local/share/JetBrains/IdeaIC2022.3/Scala/repo/org/jetbrains/scala/sbt-structure-extractor_2.12_1.0/2022.3.1/sbt-structure-extractor-2022.3.1.jar" org.jetbrains.sbt.CreateTasks;preferScala2;*/*:dumpStructure
+1674582026690:runMain cluster.RingProtocol.Main coord 25251
+1674582050497:runMain cluster.RingProtocol.Main other 0
+1674582076974:runMain cluster.RingProtocol.Main 25251 coord
+1674582085955:runMain cluster.RingProtocol.Main 0 other
