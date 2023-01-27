@@ -45,7 +45,7 @@ object IRNode {
   private final case class NodeState(
                                       id: Int, totalNodes: Int,
                                       round: Int, electionState: ElectionState,
-                                      nextNode: Option[ActorRef[IRMsg]]
+                                      nextNode: ActorRef[IRMsg]
                                     )
 
   def apply(totalNodes: Int): Behavior[IRMsg] =
@@ -58,8 +58,8 @@ object IRNode {
       Behaviors.receiveMessage {
         case Connect(forwardTo) =>
           val id = Random.between(1, totalNodes) + 1
-          context.log.info("STARTING ID {} CONNECTING WITH {} ", id, forwardTo)
-          nodeBehavior(NodeState(id, totalNodes, 1, ElectionState.Active, Some(forwardTo)))
+          context.log.info("ΑΡΧΙΚΟ ID {} | ΣΥΝΔΕΔΕΜΕΝΟΣ ΜΕ {} ", id, forwardTo)
+          nodeBehavior(NodeState(id, totalNodes, 1, ElectionState.Active, forwardTo))
         case _ =>
           Behaviors.same
       }
@@ -71,17 +71,15 @@ object IRNode {
     Behaviors.receive { (context, message) =>
       message match {
         case StartNewElection =>
-          // Εκκίνηση νέου εκλογικού γύρου
           context.log.info("ΕΚΚΙΝΗΣΗ ΝΕΩΝ ΕΚΛΟΓΩΝ ID: {}, ROUND: {} ", state.id, state.round)
-          state.nextNode.get ! RoundMsg(state.id, state.round, 1, false)
+          state.nextNode ! RoundMsg(state.id, state.round, 1, false)
           Behaviors.same
         case msg @ RoundMsg(id, round, hop, sameIdFound) =>
-          // Λήψη μηνύματος απο διαφορετικό κόμβο
-          context.log.info("ΝΕΟ ΜΗΝΥΜΑ ID: {}, ROUND: {} ", state.id, state.round)
+          context.log.info("ΝΕΟ ΜΗΝΥΜΑ ID: {}, ROUND: {} HOPS: {}, SameIdFound: {}", id, round, hop, sameIdFound)
           state.electionState match {
             case ElectionState.Passive =>
-              // Σε περίπτωση που δεν συμμετέχει
-              state.nextNode.get ! RoundMsg(id, round, hop + 1, sameIdFound)
+              context.log.info("  ΜΗ-ΣΥΜΜΕΤΕΧΩΝ. ΠΡΟΩΘΕΙΤΑΙ ΣΤΟΝ {}", state.nextNode)
+              state.nextNode ! RoundMsg(id, round, hop + 1, sameIdFound)
               Behaviors.same
             case ElectionState.Active =>
               // Καλεί την αντίστοιχη μέθοδο για διαχείριση της περίπτωσης
@@ -100,40 +98,50 @@ object IRNode {
    // To μήνυμα αφορά νέο γύρο εκλογών οπότε δεν ενδιαφέρει τον τρέχοντα κόμβο.
    // Το μήνυμα προωθείται
     if msg.round > node.round then
+      context.log.info("  ΜΗΝΥΜΑ ΑΠΟ ΕΠΟΜΕΝΟ ΓΥΡΟ. ΠΡΟΩΘΕΙΤΑΙ ΣΤΟΝ {}", node.nextNode)
       val newMsg = msg.copy(hop = msg.hop + 1)
-      node.nextNode.get ! newMsg
+      node.nextNode ! newMsg
       Behaviors.same
     else
      // Το μήνυμα έχει κάνει hops ίδιο με το totalNodes που γνωρίζει ο κόμβος
      // αρα πρόκειται για το αρχικό μήνυμα που εστειλε και περασε απο όλους τους κόμβους
       if msg.hop == node.totalNodes then
-        if msg.sameIdFound then
+        context.log.info("  ΤΟ ΑΡΧΙΚΟ ΜΗΝΥΜΑ ΠΕΡΑΣΕ ΑΠΟ ΟΛΟΥΣ ΤΟΥΣ ΚΟΜΒΟΥΣ")
 
+        if msg.sameIdFound then
+          context.log.info("    ΒΡΕΘΗΚΕ ΙΔΙΟ ID")
           context.self ! StartNewElection
 
           val nextId = Random.between(1, node.totalNodes) + 1
           val nextRound = node.round + 1
           val newState = node.copy(id = nextId, round = nextRound)
-          context.log.info(s"Node with id ${node.id} starting new election(newId: $nextId, round: $nextRound)")
+
+          context.log.info("    ΝΕΟ ID = {}", nextId)
           nodeBehavior(newState)
         else
-          context.log.info("ΑΡΧΗΓΟΣ ΜΕ ID = {} ROUND = {}", node.id, node.round, node.nextNode.get)
+          context.log.info("    ΑΡΧΗΓΟΣ ΜΕ ID = {} ROUND = {}", node.id, node.round, node.nextNode)
           val newState = node.copy(electionState = ElectionState.Leader)
           nodeBehavior(newState)
       else
+        context.log.info("  ΣΥΓΚΡΙΣΗ ID: ΜΗΝΥΜΑΤΟΣ = {} | ΚΟΜΒΟΥ = {}", msg.id , node.id )
         if msg.id > node.id then
+
+          context.log.info("    ΠΡΟΩΘΕΙΤΑΙ ΣΤΟΝ {}, ΑΛΛΑΓΗ ΚΑΤΑΣΤΑΣΗ ΣΕ ΜΗ-ΣΥΜΜΕΤΕΧΩΝ", node.nextNode)
           // Στέλνει το μήνυμα (id, round, hop + 1, sameIdFound)
           val newMsg = msg.copy(hop = msg.hop + 1)
-          node.nextNode.get ! newMsg
+          node.nextNode ! newMsg
 
           // Ο κόμβος γίνεται passive
           val newState = node.copy(electionState = ElectionState.Passive)
           nodeBehavior(newState)
         else if msg.id == node.id then
+
+          context.log.info("    ΒΡΕΘΗΚΕ ΙΔΙΟ ID. ΠΡΟΩΘΕΙΤΑΙ ΣΤΟΝ {}", node.nextNode)
           val newMsg = msg.copy(hop = msg.hop + 1, sameIdFound = true)
-          node.nextNode.get ! newMsg
+          node.nextNode ! newMsg
           Behaviors.same
         else
+          context.log.info("    ΚΑΤΑΣΤΡΟΦΗ ΜΗΝΥΜΑΤΟΣ")
           Behaviors.same
 
 
