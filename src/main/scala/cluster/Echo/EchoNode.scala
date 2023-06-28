@@ -125,8 +125,21 @@ object EchoNode {
   private def address[T](actorRef: ActorRef[T]): String =
     actorRef.path.address.toString
 
-  // Χρησιμοποιείται μόνο για ένα παράδειγμα
-  // Συνδέει 5 κόμβους με μια συγκεκριμένη τοπολογία
+  
+  /**
+    * Χρησιμοποιείται μόνο για ένα παράδειγμα
+    * Συνδέει 5 κόμβους με μια συγκεκριμένη τοπολογία:
+    *
+    *   [0]---------[1]
+    *    | \       /
+    *    |  \     /
+    *    |   \   /
+    *    |    [2]
+    *    |       \
+    *    |        \
+    *   [4]--------[3]
+    * 
+    */
   def connectNodes(actorRefs: List[ActorRef[EchoMsg]]): Unit =
     require(actorRefs.size == 5)
 

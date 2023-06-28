@@ -9,8 +9,21 @@ object MergeSortInt {
   def main(args: Array[String]): Unit =
     val list = (for (_ <- 1 to 100) yield Random.between(1, 101)).toList
     ActorSystem(sort(list), "MySystem")
+
+  //================================================================  
   
   final case class Sorted(result: List[Int])
+
+  private def sort(list: List[Int]): Behavior[Sorted] =
+    Behaviors.setup { ctx =>
+      ctx.log.info(s"Before: ${list.toString}")
+      ctx.spawnAnonymous(mergesort(list, ctx.self))
+      Behaviors.receiveMessage {
+        case Sorted(result) =>
+          ctx.log.info("After: {}", result.toString)
+          Behaviors.stopped
+      }
+    }
 
   private def mergesort(list: List[Int], replyTo: ActorRef[Sorted]): Behavior[Sorted] =
     Behaviors
@@ -59,14 +72,4 @@ object MergeSortInt {
     else
       result :++ leftRes
 
-  private def sort(list: List[Int]): Behavior[Sorted] =
-    Behaviors.setup { ctx =>
-      ctx.log.info(s"Before: ${list.toString}")
-      ctx.spawnAnonymous(mergesort(list, ctx.self))
-      Behaviors.receiveMessage {
-        case Sorted(result) =>
-          ctx.log.info("After: {}", result.toString)
-          Behaviors.stopped
-      }
-    }
 }

@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 object Main {
 
   def main(args: Array[String]): Unit =
-    require(args.length == 3)
+    require(args.length == 3, "ERROR: correct input is {port} {role} {total_nodes}")
 
     val (port, role, id) = (args(0), args(1), args(2))
   

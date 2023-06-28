@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigFactory
 
 object Main {
   def main(args: Array[String]): Unit =
-    require(args.length == 3)
+    require(args.length == 3, "ERROR: correct input is {port} {role} {node_id}")
     
     val (port, role, id) = (args(0), args(1), args(2))
 
@@ -22,7 +22,7 @@ object Main {
 
     val rootBehavior =
       if role == "coord" then
-        Coordinator(4)
+        Coordinator(5)
       else
         CRNode(parsedId)
 

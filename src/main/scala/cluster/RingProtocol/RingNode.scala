@@ -69,7 +69,6 @@ object RingNode {
           context.log.info("ΑΠΟΣΤΟΛΗ ΠΡΩΤΟΥ ΤΟΚΕΝ ΣΕ {}", forwardTo)
           forwardTo ! Token(tkn, context.self)
           ringNodeBehavior(true, forwardTo)
-
       }
     }
 

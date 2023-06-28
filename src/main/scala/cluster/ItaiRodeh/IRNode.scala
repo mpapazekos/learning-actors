@@ -89,6 +89,7 @@ object IRNode {
               // Εαν είναι αρχηγός διατηρεί τη ίδια συμπεριφορά
               Behaviors.same
           }
+        case _ => Behaviors.same
       }
     }
 
